@@ -17,8 +17,8 @@ int handle_trickle_init(int, char**) {
 }
 
 int handle_trickle(MSG_FROM_HOST& mfh) {
-    int retval;
-    char result_name[64], url[64], jid[16], query[MAX_QUERY_LENGTH];
+    int retval, jid;
+    char result_name[64], url[64], query[MAX_QUERY_LENGTH];
     MIOFILE mf;
 
     mf.init_buf_read(mfh.xml);
@@ -31,14 +31,14 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
         if (xp.parse_str("url", url, sizeof(url))) {
             continue;
         }
-        if (xp.parse_str("jid", jid, sizeof(jid))) {
+        if (xp.parse_int("jid", jid)) {
             continue;
         }
     }
 
     // Set url in spark_job to eventually be handled by wg
     sprintf(query,
-        "UPDATE spark_job SET url=\"%s\" WHERE ID=%s",
+        "UPDATE spark_job SET url=\"%s\" WHERE ID=%d",
         url,
         jid
     );
@@ -47,7 +47,7 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
 
     // Insert new master node entry in spark_node 
     sprintf(query,
-        "INSERT INTO spark_node VALUES (%s, %ld, \"%s\", %d)",
+        "INSERT INTO spark_node VALUES (%d, %ld, \"%s\", %d)",
         jid,
         mfh.hostid,
         result_name,

@@ -450,6 +450,8 @@ int master_main(int argc, char** argv, int jid) {
         return retval;
     }
     
+    // TODO figure out how to get actual trickle message, then 
+    // actually check message and confirm contents
     retval = retrieve_trickle_reply(reply);
     if (retval) {
         fprintf(stderr, "not able to retrieve trickle reply\n");
@@ -469,6 +471,21 @@ int master_main(int argc, char** argv, int jid) {
         return retval;
     }    
 
+    sprintf(buf, "<shutdown>1</shutdown>\n<jid>%d</jid>", jid);
+    retval = boinc_send_trickle_up(
+        const_cast<char*>("spark_shutdown"),
+        buf
+    );
+    if (retval) {
+        fprintf(stderr, "%s boinc_send_trickle_up returned %d\n",
+            boinc_msg_prefix(buf, sizeof(buf)), retval
+        );
+        return retval;
+    }  
+
+    // Give some time to send trickle up
+    boinc_sleep(10);
+
     stop_master();
     stop_worker();
 
@@ -476,7 +493,7 @@ int master_main(int argc, char** argv, int jid) {
 }
 
 int worker_main(int argc, char** argv, int jid) {
-    char buf[256], url[64], command[300], input_path[MAXPATHLEN];
+    char reply[256], buf[256], url[64], command[300], input_path[MAXPATHLEN];
     int i, retval;
     
     for (i = 0; i < argc; ++i) {
@@ -524,7 +541,14 @@ int worker_main(int argc, char** argv, int jid) {
         return retval;
     } 
 
-    boinc_sleep(1000); // Placeholder TODO figure out how to deal with worker after start
+    // TODO figure out how to get actual trickle message, then 
+    // actually check message and confirm contents
+    retval = retrieve_trickle_reply(reply);
+    if (retval) {
+        fprintf(stderr, "not able to retrieve trickle reply\n");
+        return retval;
+    } 
+
     stop_worker();
 
     return 0;

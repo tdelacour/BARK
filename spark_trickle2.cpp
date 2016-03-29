@@ -17,8 +17,8 @@ int handle_trickle_init(int, char**) {
 }
 
 int handle_trickle(MSG_FROM_HOST& mfh) {
-    int retval, n_nodes_p;
-    char result_name[64], jid[16], query[MAX_QUERY_LENGTH];
+    int retval, n_nodes_p, jid;
+    char result_name[64], query[MAX_QUERY_LENGTH];
     MIOFILE mf;
     DB_MSG_TO_HOST mth;
 
@@ -29,14 +29,14 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
         if (xp.parse_str("result_name", result_name, sizeof(result_name))) {
             continue;
         } 
-        if (xp.parse_str("jid", jid, sizeof(jid))) {
+        if (xp.parse_int("jid", jid)) {
             continue;
         }
     }
 
     // Insert new worker node entry in spark_node 
     sprintf(query,
-        "INSERT INTO spark_node VALUES (%s, %ld, \"%s\", %d)",
+        "INSERT INTO spark_node VALUES (%d, %ld, \"%s\", %d)",
         jid,
         mfh.hostid,
         result_name,
@@ -47,7 +47,7 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
 
     // Retrieve total number of workers expected
     sprintf(query,
-        "SELECT * FROM spark_job WHERE ID=%s",
+        "SELECT * FROM spark_job WHERE ID=%d",
         jid
     );
     MYSQL_RES* result = db->query(query, retval);
@@ -55,14 +55,14 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
 
     MYSQL_ROW row = mysql_fetch_row(result);
     if (!row) {
-        fprintf(stderr, "incorrect jid: %s\n", jid);
+        fprintf(stderr, "incorrect jid: %d\n", jid);
         return 1;
     }
     n_nodes_p = atoi(row[N_NODES_P]);
 
     // Look up all workers recorded in the database
     sprintf(query,
-        "SELECT * FROM spark_node WHERE jid=%s AND master=0",
+        "SELECT * FROM spark_node WHERE jid=%d AND master=0",
         jid
     );
     result = db->query(query, retval);
@@ -72,7 +72,7 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
     // If number of workers is expected number of workers, signal master
     if ((int)mysql_num_rows(result) == n_nodes_p) {
         sprintf(query,
-            "SELECT * FROM spark_node WHERE jid=%s AND master=1",
+            "SELECT * FROM spark_node WHERE jid=%d AND master=1",
             jid
         );
         result = db->query(query, retval);

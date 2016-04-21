@@ -1,0 +1,133 @@
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js"></script>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+
+<!-- Optional theme -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous">
+
+<!-- Latest compiled and minified JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+<link rel="stylesheet" type="text/css" href="public/style/gradient.css">
+<link rel="stylesheet" type="text/css" href="public/style/index.css">
+
+
+<script src="public/libraries/codemirror-5.13.2/lib/codemirror.js"></script>
+<link rel="stylesheet" href="public/libraries/codemirror-5.13.2/lib/codemirror.css">
+<script src="public/libraries/codemirror-5.13.2/mode/python/python.js"></script>
+<script src="public/libraries/dropzone-4.3.0/dist/dropzone.js"></script>
+<link rel="stylesheet" href="public/libraries/dropzone-4.3.0/dist/dropzone.css">
+
+<style>
+.main_button{
+	width:49%; float:left; height:70px; font-size:30px; font-weight:100; margin-left:1%;margin-top:5%;
+}
+#editor{
+	width:100%;
+	display:none;
+	z-index:100;
+	position:relative;
+	height:40%;
+	overflow:scroll;
+	opacity:0.75;
+}
+#uploader{
+	display:none;
+	position:relative;
+	z-index:100;
+	width:100%;
+	opacity:0.75;
+	height:40%;
+	overflow:scroll;
+}
+#second{
+	display:none;
+	border-top:2px solid black;
+}
+#file_title{
+	font-weight:100;
+	margin-top:5%;
+}
+
+#workers{
+	font-weight:100;
+	font-size:25px;
+	position:relative;
+	z-index:100;
+}
+#workers input{
+	display:block;
+	position:relative;
+	z-index:100;
+	opacity:0.75;
+}
+#submit_button{
+	position:relative;
+	z-index:100;
+	float:none;
+	margin-left:25%;
+}
+.dz-progress{
+	display:none;
+}
+</style>
+
+<script src="public/scripts/index.js"></script>
+</head>
+<body>
+	<div class="wood_wrap">
+		<div class="wood_inner">
+			<div class="row" style="height:100%">
+				<div class="col-md-8 col-lg-8 col-xs-12 col-lg-offset-2 col-md-offset-2">
+					<!--<img src="public/style/paw.gif" alt="paw" width="40%" style="margin-left:auto; margin-right:auto; display:block">
+					-->
+                                            <img src="public/style/penn-logo.png" alt="logo" width="40%" style="margin-left:auto; margin-right:auto; margin-top:10%; margin-bottom:10%; display:block">
+                        <div style="margin:auto; display:block; text-align:center; width:50%; font-size:80px; color:black">BARK</div>
+					<div style="">
+						<input type="file" id="upload" style="display:none"/>
+						<button class="button shine main_button" onclick="uploader()">Upload a file</button>
+						<button class="button shine main_button" onclick="editor()">Text input</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="wood_wrap" id="second">
+		<div class="wood_inner">
+			<div class="row" style="height:100%;">
+				<div class="col-md-8 col-lg-8 col-xs-12 col-lg-offset-2 col-md-offset-2" style="height:100%">
+					<div style="margin:auto; display:block;">
+						<div id="file_title" style="width:100%; text-align:center; font-size:40px; margin-bottom:40px"></div> 
+						<div id="editor">
+						</div>
+						<div id="uploader">
+							<form action="/file-upload" class="dropzone" id="main_dropzone">
+				  				<div class="fallback">
+				    				<input name="file" type="file" id="file_input_elem"/>
+				  				</div>
+							</form>
+						</div>
+						<br>
+					</div>
+					<div id="workers" style="margin:auto; display:block; text-align:center; width:100%">
+						<div style="width:100%; text-align:center">Number of workers:</div> 
+						<form method="post" action="/new_job">
+							<div style="width:100%;"><input name="workers" type="number" style="display:block; width:20%; margin-left:40%; margin-top:2%"></div>
+							<input type="hidden" name="file_data" id="input_file_data">
+							<input style="display:none" type="submit" name="file_data" id="input_submit">
+						</form>
+					</div>
+
+					<button class="button shine main_button" id="submit_button" onclick="submit()">Submit</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<div id="end"></div>
+
+</body>
+</html>

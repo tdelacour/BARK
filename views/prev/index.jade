@@ -1,0 +1,11 @@
+html
+  head
+    title="BARK DEMO" 
+  body
+    form(action="/job_view" name="Choose job", method="get")
+      div.input
+        select(id="job", name="job_selector")
+          each val in jids
+            option(value="#{jids}") Jid #{jids}
+      div.actions
+        input(type="submit", value="go!")

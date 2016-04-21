@@ -1,10 +1,10 @@
-//#include "sched_msgs.h"
 #include "str_replace.h"
 #include "miofile.h"
 #include "parse.h"
 #include "spark_mysql.h" // SPARK_MYSQL
 #include "trickle_handler.h"
 
+#define EXTERNAL_IP_ADDR 41
 SPARK_MYSQL* db;
 
 int handle_trickle_init(int, char**) {
@@ -17,8 +17,8 @@ int handle_trickle_init(int, char**) {
 }
 
 int handle_trickle(MSG_FROM_HOST& mfh) {
-    int retval, n_nodes_p, jid;
-    char result_name[64], query[MAX_QUERY_LENGTH];
+    int retval, n_nodes_p, jid, error;
+    char result_name[64], query[MAX_QUERY_LENGTH], ip[64];
     MIOFILE mf;
     DB_MSG_TO_HOST mth;
 
@@ -32,69 +32,38 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
         if (xp.parse_int("jid", jid)) {
             continue;
         }
+        if (xp.parse_int("error", error)) {
+            continue;
+        }
     }
 
-    // Insert new worker node entry in spark_node 
+    // Get IP address (relevant for demo)
     sprintf(query,
-        "INSERT INTO spark_node VALUES (%d, %ld, \"%s\", %d)",
-        jid,
-        mfh.hostid,
-        result_name,
-        0
-    );
-    db->query(query, retval);
-    check_error(retval, query);
-
-    // Retrieve total number of workers expected
-    sprintf(query,
-        "SELECT * FROM spark_job WHERE ID=%d",
-        jid
+        "SELECT * FROM host WHERE id=%ld",
+        mfh.hostid
     );
     MYSQL_RES* result = db->query(query, retval);
     check_error(retval, query);
 
     MYSQL_ROW row = mysql_fetch_row(result);
     if (!row) {
-        fprintf(stderr, "incorrect jid: %d\n", jid);
+        fprintf(stderr, "incorrect hid: %ld\n", mfh.hostid);
         return 1;
     }
-    n_nodes_p = atoi(row[N_NODES_P]);
+    strncpy(ip, row[EXTERNAL_IP_ADDR], 64);
 
-    // Look up all workers recorded in the database
+    // Insert new worker node entry in spark_node 
     sprintf(query,
-        "SELECT * FROM spark_node WHERE jid=%d AND master=0",
-        jid
+        "INSERT INTO spark_node VALUES (%d, %ld, \"%s\", %d, \"%s\", %d)",
+        jid,
+        mfh.hostid,
+        result_name,
+        0,
+        ip,
+        error 
     );
-    result = db->query(query, retval);
+    db->query(query, retval);
     check_error(retval, query);
-
-    // TODO zookeeper means multiple masters
-    // If number of workers is expected number of workers, signal master
-    if ((int)mysql_num_rows(result) == n_nodes_p) {
-        sprintf(query,
-            "SELECT * FROM spark_node WHERE jid=%d AND master=1",
-            jid
-        );
-        result = db->query(query, retval);
-        check_error(retval, query);
-
-        // NOTE: as long as not using zookeeper, we can assume one single master
-        row = mysql_fetch_row(result);
-
-        // Create trickle-down
-        mth.clear();
-        mth.create_time = time(0);
-        mth.hostid = atoi(row[HID]);
-        sprintf(mth.xml,
-            "<trickle_down>\n"
-            "   <result_name>%s</result_name>\n"
-            "   <continue>1</continue>\n"
-            "</trickle_down>\n",
-            row[RESULT_NAME]
-        );
-        retval = mth.insert();
-    }
-
 
     return retval;
 }

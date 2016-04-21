@@ -17,7 +17,7 @@ int handle_trickle_init(int, char**) {
 }
 
 int handle_trickle(MSG_FROM_HOST& mfh) {
-    int retval, shutdown, jid;
+    int retval, shutdown, running, jid;
     char query[MAX_QUERY_LENGTH];
     MIOFILE mf;
     DB_MSG_TO_HOST mth;
@@ -30,6 +30,9 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
             continue;
         }
         if (xp.parse_int("shutdown", shutdown)) {
+            continue;
+        }
+        if (xp.parse_int("running", running)) {
             continue;
         }
     }
@@ -57,7 +60,29 @@ int handle_trickle(MSG_FROM_HOST& mfh) {
             retval = mth.insert();
         }
 
-        // TODO remove stuff from db!
+        // Purge DB
+        sprintf(query,
+            "DELETE FROM spark_node WHERE jid=%d",
+            jid
+        );
+        db->query(query, retval);
+        check_error(retval, query);
+
+        sprintf(query,
+            "DELETE FROM spark_timeout WHERE jid=%d",
+            jid
+        );
+        db->query(query, retval);
+        check_error(retval, query);
+    }
+
+    if (running) {
+        sprintf(query, 
+            "UPDATE spark_job SET running=1 WHERE ID=%d",
+            jid
+        );
+        db->query(query, retval);
+        check_error(retval, query);
     }
 
     return retval;

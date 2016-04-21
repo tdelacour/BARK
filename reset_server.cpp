@@ -70,6 +70,12 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
+    if (mysql_query(conn, "DELETE FROM spark_timeout")) {
+        fprintf(stderr, "Oh no! Could not clear table 'spark_timeout'.\n");
+        mysql_close(conn);
+        exit(1);
+    }
+
     mysql_close(conn);
 
     // Run restart script

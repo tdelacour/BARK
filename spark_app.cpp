@@ -287,7 +287,7 @@ int wait_on_workers(int n_workers, char** workers, char* logpath) {
     int retval, i, count = 0;
 
     // Poll for max 10 minutes
-    for (i = 0; i < 100; ++i) {
+    for (i = 0; i < 30; ++i) {
         logfile = boinc_fopen(logpath, "r");
         if (!logfile) {
             fprintf(stderr, "Unable to open logfile to read worker info\n");
@@ -465,15 +465,29 @@ int master_main(int argc, char** argv, int jid) {
         fprintf(stderr, "%s\n", workers[i]);
     }
 
+    sprintf(buf, "<running>1</running>\n<jid>%d</jid>", jid);
+    retval = boinc_send_trickle_up(
+        const_cast<char*>("spark_master_checkpoint"),
+        buf
+    );
+    fprintf(stderr, "just finished sending trickle up for running!");
+    if (retval) {
+        fprintf(stderr, "%s boinc_send_trickle_up returned %d\n",
+            boinc_msg_prefix(buf, sizeof(buf)), retval
+        );
+        return retval;
+    } 
+
     retval = execute_job(url);
     if (retval) {
+        // TODO mark job as error
         fprintf(stderr, "error executing spark job\n");
         return retval;
     }    
 
     sprintf(buf, "<shutdown>1</shutdown>\n<jid>%d</jid>", jid);
     retval = boinc_send_trickle_up(
-        const_cast<char*>("spark_shutdown"),
+        const_cast<char*>("spark_master_checkpoint"),
         buf
     );
     if (retval) {
@@ -490,6 +504,19 @@ int master_main(int argc, char** argv, int jid) {
     stop_worker();
 
     return 0;
+}
+
+int worker_notify_server(int jid, int error) {
+    char buf[256];
+    int retval;
+
+    sprintf(buf, "<jid>%d</jid>\n<error>%d</error>", jid, error);
+    retval = boinc_send_trickle_up(
+        const_cast<char*>("worker_up"),
+        buf
+    );
+    
+    return retval;
 }
 
 int worker_main(int argc, char** argv, int jid) {
@@ -511,6 +538,7 @@ int worker_main(int argc, char** argv, int jid) {
     retval = boinc_resolve_filename(SPARK_TGZ, input_path, MAXPATHLEN);
     if (retval) {
         fprintf(stderr, "resolve input filename returned %d\n", retval);
+        worker_notify_server(jid, retval);
         return retval;
     }
 
@@ -519,21 +547,19 @@ int worker_main(int argc, char** argv, int jid) {
     retval = system(command);
     if (retval) {
         fprintf(stderr, "%s command returned error: %d\n", command, retval);
+        worker_notify_server(jid, retval);
         return retval;
     }
 
     retval = start_worker(url); 
     if (retval) {
-        fprintf(stderr, "failed to start master node: %d\n", retval);
+        fprintf(stderr, "failed to start worker node: %d\n", retval);
+        worker_notify_server(jid, retval);
         return retval;
     }
 
     // Checkpoint with BOINC server 
-    sprintf(buf, "<jid>%d</jid>", jid);
-    retval = boinc_send_trickle_up(
-        const_cast<char*>("worker_up"),
-        buf
-    );
+    retval = worker_notify_server(jid, 0);
     if (retval) {
         fprintf(stderr, "%s boinc_send_trickle_up returned %d\n",
             boinc_msg_prefix(buf, sizeof(buf)), retval

@@ -15,6 +15,7 @@
 #define N_WORKERS 3
 #define URL       5
 #define N_NODES_P 7
+#define RUNNING   8
 
 #define HID         1
 #define RESULT_NAME 2

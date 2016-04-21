@@ -32,7 +32,7 @@ int update_db(int n_masters, int n_nodes) {
 
     sprintf(
         query
-      , "CREATE TABLE IF NOT EXISTS %s (%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+      , "CREATE TABLE IF NOT EXISTS %s (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
       , "spark_job"
       , "ID int NOT NULL AUTO_INCREMENT"
       , "file varchar(255) NOT NULL"
@@ -42,6 +42,7 @@ int update_db(int n_masters, int n_nodes) {
       , "url varchar(255)"
       , "result text"
       , "n_nodes_p int"
+      , "running int"
       , "PRIMARY KEY (ID)"
     );
     if (mysql_query(conn, query)) {
@@ -52,14 +53,16 @@ int update_db(int n_masters, int n_nodes) {
 
     sprintf(
         query
-      , "INSERT INTO %s (file, n_masters, n_nodes, handled, n_nodes_p) VALUES (\"%s%d.py\", %d, %d, %s, %d)"
+      , "INSERT INTO %s (file, n_masters, n_nodes, handled, n_nodes_p, running, execute_sent) VALUES (\"%s%d.py\", %d, %d, %s, %d, %d, %d)"
       , "spark_job"
       , "spark_job_"
       , start_time
       , n_masters
       , n_nodes
-      , "false"
+      , 0 
       , n_nodes - n_masters
+      , 0
+      , 0
     );
     if (mysql_query(conn, query)) {
         fprintf(stderr, "Unable to insert spark_job into db\n");

@@ -40,6 +40,8 @@
     </db_host>
     <daily_result_quota>500</daily_result_quota>
     <max_wus_to_send>50</max_wus_to_send>
+    <next_rpc_delay>10</next_rpc_delay>
+    <max_wus_in_progress>1</max_wus_in_progress>
     <msg_to_host/>
     <one_result_per_user_per_wu/>
   </config>
@@ -126,6 +128,12 @@
     </daemon>
     <daemon>
       <cmd>spark_trickle2 -d 3 --variety worker_up</cmd>
+    </daemon>
+    <daemon>
+      <cmd>spark_trickle3 -d 3 --variety spark_master_checkpoint</cmd>
+    </daemon>
+    <daemon>
+      <cmd>spark_node_counter</cmd>
     </daemon>
   </daemons>
 </boinc>

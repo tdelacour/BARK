@@ -10,6 +10,7 @@
 
 #define REPLICATION_FACTOR 1
 #define CURR_TIME time(NULL)
+#define NODE_TIMEOUT 100
 
 const char* app_name   = "test_app";
 const char* master_in  = "test_app_in_master";
@@ -180,6 +181,15 @@ void scan_for_jobs() {
                     n_nodes - n_masters,
                     row[ID]
                 );
+                db->query(query, retval);
+                check_error(retval, query);
+
+                // Also set timeout for this node.
+                sprintf(query,
+                    "INSERT INTO spark_timeout VALUES (%s, %ld)",
+                    row[ID],
+                    CURR_TIME + NODE_TIMEOUT
+                ); 
                 db->query(query, retval);
                 check_error(retval, query);
             }
